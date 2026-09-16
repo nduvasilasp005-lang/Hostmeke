@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Host Me Ke</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a3c5e;
+      --accent: #e8a838;
+      --light: #f7f4ef;
+      --white: #ffffff;
+      --gray: #6b7280;
+      --border: #e2ddd6;
+      --shadow: 0 4px 24px rgba(26,60,94,0.10);
+    }
+
+    body { font-family: 'DM Sans', sans-serif; background-color: var(--light); color: #222; }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 40px; background: var(--white); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .logo { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--primary); letter-spacing: 1px; }
+    .logo span { color: var(--accent); }
+    .header-links { display: flex; gap: 16px; align-items: center; }
+    .header-links a {
+      text-decoration: none; color: var(--primary); font-size: 14px; font-weight: 500;
+      padding: 8px 18px; border-radius: 30px; transition: all 0.2s;
+    }
+    .header-links a:hover { background: var(--light); }
+    .header-links a.btn-host { background: var(--primary); color: white; }
+    .header-links a.btn-host:hover { background: #112b47; }
+
+    .hero {
+      min-height: 58vh;
+      background: linear-gradient(135deg, #1a3c5e 0%, #2d6a9f 60%, #e8a838 100%);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 60px 20px 50px; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero h2 {
+      font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px);
+      color: white; margin-bottom: 12px; position: relative;
+    }
+    .hero p { color: rgba(255,255,255,0.8); font-size: 17px; margin-bottom: 36px; position: relative; }
+
+    .search-card {
+      background: white; border-radius: 16px; padding: 20px 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18); display: flex; gap: 12px;
+      flex-wrap: wrap; align-items: flex-end; max-width: 820px; width: 100%; position: relative;
+    }
+    .search-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+    .search-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray); }
+    .search-group input, .search-group select {
+      padding: 10px 12px; font-size: 15px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'DM Sans', sans-serif; color: #222;
+      background: #fafafa; transition: border 0.2s; outline: none;
+    }
+    .search-group input:focus, .search-group select:focus { border-color: var(--primary); background: white; }
+
+    .btn-search {
+      padding: 12px 28px; font-size: 15px; font-weight: 600; background: var(--accent);
+      color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap; align-self: flex-end; font-family: 'DM Sans', sans-serif;
+    }
+    .btn-search:hover { background: #d4952e; transform: translateY(-1px); }
+
+    .filter-bar { display: flex; justify-content: center; gap: 10px; padding: 30px 20px 10px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 8px 22px; border-radius: 30px; border: 1.5px solid var(--border);
+      background: white; font-size: 14px; font-weight: 500; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: all 0.2s; color: #444;
+    }
+    .filter-btn:hover, .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .featured { padding: 20px 40px 60px; max-width: 1200px; margin: 0 auto; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .section-header h3 { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--primary); }
+    #results-count { font-size: 13px; color: var(--gray); }
+
+    .properties { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; }
+    .property {
+      background: white; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s; cursor: pointer; position: relative;
+    }
+    .property:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(26,60,94,0.16); }
+
+    .property-img-wrap { position: relative; height: 170px; background: linear-gradient(135deg, #c9d6df, #e2ebf0); overflow: hidden; }
+    .property-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .property-badge {
+      position: absolute; top: 12px; left: 12px; background: var(--primary); color: white;
+      font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .property-badge.sale { background: #e85a38; }
+    .property-badge.bnb  { background: #38a838; }
+
+    .wishlist-btn {
+      position: absolute; top: 10px; right: 12px; background: white; border: none;
+      border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.2s;
+    }
+    .wishlist-btn:hover { transform: scale(1.2); }
+    .wishlist-btn.liked { color: #e85a38; }
+
+    .property-info { padding: 14px 16px 16px; }
+    .property-info strong { display: block; font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .property-location { font-size: 13px; color: var(--gray); margin-bottom: 10px; }
+    .property-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .property-price { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .property-price span { font-size: 11px; font-weight: 400; color: var(--gray); }
+    .property-rating { display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #f59e0b; }
+
+    .btn-pay-card {
+      width: 100%; padding: 9px 0; background: var(--accent); color: white; border: none;
+      border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: background 0.2s, transform 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-pay-card:hover { background: #d4952e; transform: translateY(-1px); }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-card { background: white; border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+    .skeleton-img  { height: 170px; }
+    .skeleton-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .skeleton-line { height: 14px; }
+    .skeleton-line.short { width: 60%; }
+    .skeleton-btn  { height: 36px; margin-top: 4px; }
+
+    #no-results { display: none; text-align: center; padding: 60px 20px; color: var(--gray); grid-column: 1/-1; }
+    #no-results p { font-size: 16px; margin-top: 8px; }
+
+    .how-it-works { background: var(--primary); padding: 70px 40px; text-align: center; }
+    .how-it-works h3 { font-family: 'Playfair Display', serif; font-size: 32px; color: white; margin-bottom: 48px; }
+    .steps { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; max-width: 900px; margin: 0 auto; }
+    .step {
+      flex: 1; min-width: 200px; max-width: 240px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 30px 24px;
+      color: white; transition: background 0.2s;
+    }
+    .step:hover { background: rgba(255,255,255,0.14); }
+    .step-number {
+      width: 48px; height: 48px; background: var(--accent); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; margin: 0 auto 16px; color: white;
+    }
+    .step h4 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .step p  { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.6; }
+
+    footer { background: #111; color: rgba(255,255,255,0.5); text-align: center; padding: 24px; font-size: 13px; }
+    footer span { color: var(--accent); }
+
+    #chat-toggle {
+      position: fixed; bottom: 24px; right: 24px; background: var(--accent); color: white;
+      border: none; border-radius: 50%; width: 58px; height: 58px; font-size: 24px;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(232,168,56,0.5); z-index: 200; transition: transform 0.2s;
+    }
+    #chat-toggle:hover { transform: scale(1.1); }
+    #chat-window {
+      display: none; position: fixed; bottom: 96px; right: 24px; width: 340px; height: 480px;
+      border-radius: 16px; background: white; box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+      overflow: hidden; z-index: 200;
+    }
+
+    /* ── HOST PROPERTY MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 500; justify-content: center; align-items: center; backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 20px; padding: 40px 36px; width: 100%;
+      max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); position: relative;
+      animation: slideUp 0.3s ease; max-height: 90vh; overflow-y: auto;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      font-size: 22px; cursor: pointer; color: var(--gray); line-height: 1;
+    }
+    .modal-close:hover { color: #222; }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--primary); margin-bottom: 6px; }
+    .modal .modal-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; }
+
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+    .auth-tab {
+      flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 14px;
+      font-weight: 600; color: var(--gray); border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.2s; background: none; border-top: none;
+      border-left: none; border-right: none; font-family: 'DM Sans', sans-serif;
+    }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #444; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-family: 'DM Sans', sans-serif; outline: none; transition: border 0.2s;
+      color: #222; background: white;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .btn-primary {
+      width: 100%; padding: 13px; background: var(--primary); color: white; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: background 0.2s; margin-top: 4px;
+    }
+    .btn-primary:hover { background: #112b47; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+
+    .divider {
+      display: flex; align-items: center; gap: 12px; margin: 20px 0;
+      color: var(--gray); font-size: 13px;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .btn-google {
+      width: 100%; padding: 12px; background: white; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; display: flex; align-items: center;
+      justify-content: center; gap: 10px; transition: all 0.2s; color: #333;
+    }
+    .btn-google:hover { background: #f5f5f5; border-color: #aaa; }
+
+    .auth-error {
+      background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
+      padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none;
+    }
+    .auth-success {
+      background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a;
+      padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none;
+    }
+
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white;
+      font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; font-family: 'DM Sans', sans-serif;
+    }
+    .user-menu { position: relative; }
+    .user-dropdown {
+      display: none; position: absolute; top: 48px; right: 0; background: white;
+      border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+      min-width: 180px; overflow: hidden; z-index: 200;
+    }
+    .user-dropdown.open { display: block; }
+    .user-dropdown p { padding: 14px 16px 8px; font-size: 13px; color: var(--gray); border-bottom: 1px solid var(--border); }
+    .user-dropdown a { display: block; padding: 11px 16px; font-size: 14px; color: #333; text-decoration: none; transition: background 0.15s; }
+    .user-dropdown a:hover { background: var(--light); }
+    .user-dropdown a.logout { color: #dc2626; }
+
+    #toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: #1a1a1a; color: white; padding: 12px 24px; border-radius: 30px;
+      font-size: 14px; font-weight: 500; z-index: 300; opacity: 0;
+      transition: all 0.35s ease; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── M-PESA MODAL ── */
+    #mpesa-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.60);
+      z-index: 600; justify-content: center; align-items: center;
+      backdrop-filter: blur(5px); padding: 20px;
+    }
+    #mpesa-modal.open { display: flex; }
+    .mpesa-card {
+      background: white; border-radius: 20px; width: 100%; max-width: 400px;
+      overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.30);
+      animation: slideUp 0.3s ease; position: relative;
+    }
+    .mpesa-card-header {
+      background: linear-gradient(135deg, #007a3d 0%, #00a651 100%);
+      padding: 22px 24px 18px; display: flex; align-items: center; gap: 14px;
+    }
+    .mpesa-icon {
+      width: 46px; height: 46px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .mpesa-icon svg { width: 28px; height: 28px; }
+    .mpesa-card-header-text h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: white; margin-bottom: 2px; }
+    .mpesa-card-header-text p { font-size: 12px; color: rgba(255,255,255,0.75); }
+    .mpesa-close {
+      position: absolute; top: 14px; right: 18px; background: rgba(255,255,255,0.2);
+      border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px;
+      color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s; line-height: 1;
+    }
+    .mpesa-close:hover { background: rgba(255,255,255,0.35); }
+    .mpesa-property-strip {
+      background: var(--light); border-bottom: 1px solid var(--border);
+      padding: 12px 24px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .mpesa-property-strip .prop-name { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .mpesa-property-strip .prop-loc  { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .mpesa-property-strip .prop-amount { text-align: right; }
+    .mpesa-property-strip .prop-amount strong { display: block; font-size: 18px; font-weight: 700; color: var(--primary); }
+    .mpesa-property-strip .prop-amount span  { font-size: 11px; color: var(--gray); }
+    .mpesa-paybill-strip {
+      background: #f0fdf4; border-bottom: 1px solid #d1fae5; padding: 10px 24px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .mpesa-paybill-row { display: flex; justify-content: space-between; align-items: center; }
+    .mpesa-pb-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #4b7a5e; }
+    .mpesa-pb-value { font-size: 14px; font-weight: 700; color: #166534; letter-spacing: 0.04em; font-family: monospace; }
+    .mpesa-pb-value.accent { color: #00a651; font-size: 15px; }
+    .mpesa-body { padding: 20px 24px 24px; }
+    .mpesa-field { margin-bottom: 14px; }
+    .mpesa-field label {
+      display: block; font-size: 12px; font-weight: 600; color: #555;
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .mpesa-phone-wrap { position: relative; }
+    .mpesa-prefix {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      font-size: 14px; color: #444; pointer-events: none; white-space: nowrap;
+    }
+    .mpesa-phone-wrap input { padding-left: 82px !important; }
+    .mpesa-field input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+      border-radius: 9px; font-size: 15px; font-family: 'DM Sans', sans-serif;
+      color: #222; outline: none; transition: border-color 0.18s;
+    }
+    .mpesa-field input:focus { border-color: #00a651; }
+    .mpesa-field input::placeholder { color: #bbb; }
+    .mpesa-pay-btn {
+      width: 100%; padding: 13px; background: #00a651; color: white; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: background 0.18s, transform 0.12s;
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px;
+    }
+    .mpesa-pay-btn:hover { background: #008f45; }
+    .mpesa-pay-btn:active { transform: scale(0.98); }
+    .mpesa-pay-btn:disabled { background: #8ecfab; cursor: not-allowed; transform: none; }
+    .mpesa-spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white; border-radius: 50%; animation: mpesaSpin 0.7s linear infinite;
+      display: none; flex-shrink: 0;
+    }
+    @keyframes mpesaSpin { to { transform: rotate(360deg); } }
+    .mpesa-status {
+      border-radius: 9px; padding: 11px 14px; font-size: 13px; margin-top: 12px;
+      display: none; line-height: 1.5;
+    }
+    .mpesa-status.waiting { background: #fff8e1; color: #7a5800; border: 1px solid #ffe082; display: block; }
+    .mpesa-status.success { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; display: block; }
+    .mpesa-status.error   { background: #fce4ec; color: #880e4f; border: 1px solid #f48fb1; display: block; }
+    .mpesa-trust { text-align: center; font-size: 11px; color: #bbb; margin-top: 14px; }
+    .mpesa-trust a { color: #00a651; text-decoration: none; }
+
+    .user-dropdown a.pay-link { color: #00a651; font-weight: 600; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .user-dropdown a.pay-link:hover { background: #f0fdf4; }
+
+    /* Bookings modal */
+    #bookings-modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 500; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 20px;
+    }
+    #bookings-modal.open { display: flex; }
+    .bookings-card {
+      background: white; border-radius: 20px; width: 100%; max-width: 520px;
+      max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.25); animation: slideUp 0.3s ease;
+    }
+    .bookings-header {
+      background: var(--primary); padding: 20px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .bookings-header h3 { font-family: 'Playfair Display', serif; font-size: 20px; color: white; }
+    .bookings-header button {
+      background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
+      width: 30px; height: 30px; color: white; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bookings-list { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .booking-item {
+      background: var(--light); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .booking-item .b-name { font-size: 14px; font-weight: 600; color: var(--primary); }
+    .booking-item .b-ref  { font-size: 12px; color: var(--gray); margin-top: 2px; font-family: monospace; }
+    .booking-item .b-date { font-size: 11px; color: var(--gray); margin-top: 4px; }
+    .booking-item .b-amount { font-size: 15px; font-weight: 700; color: var(--primary); text-align: right; }
+    .booking-status {
+      display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; margin-top: 4px; text-transform: uppercase;
+    }
+    .booking-status.confirmed { background: #d1fae5; color: #065f46; }
+    .booking-status.pending   { background: #fef3c7; color: #92400e; }
+    .booking-status.failed    { background: #fee2e2; color: #991b1b; }
+    .no-bookings { text-align: center; padding: 40px 20px; color: var(--gray); }
+
+    @media (max-width: 600px) {
+      header { padding: 14px 20px; }
+      .featured { padding: 16px 20px 40px; }
+      .how-it-works { padding: 50px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">Host Me <span>Ke</span></div>
+    <div class="header-links" id="header-links">
+      <a href="#" class="btn-host" onclick="openHostModal(); return false;">Become a Host</a>
+      <a href="#" id="login-link">Log in</a>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h2>Find Your Perfect Stay</h2>
+    <p>Hostays, rental homes &amp; properties for sale across Kenya</p>
+    <div class="search-card">
+      <div class="search-group">
+        <label>Location</label>
+        <input type="text" id="search-location" placeholder="e.g. Mombasa, Nairobi…" />
+      </div>
+      <div class="search-group">
+        <label>Type</label>
+        <select id="search-type">
+          <option value="">All Types</option>
+          <option value="bnb">Hostays</option>
+          <option value="rent">For Rent</option>
+          <option value="sale">For Sale</option>
+        </select>
+      </div>
+      <div class="search-group">
+        <label>Max Price (KES)</label>
+        <input type="number" id="search-price" placeholder="Any price" />
+      </div>
+      <button class="btn-search" onclick="runSearch()">🔍 Search</button>
+    </div>
+  </section>
+
+  <!-- FILTER TABS -->
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterBy('all', this)">All</button>
+    <button class="filter-btn" onclick="filterBy('bnb', this)">Hostays</button>
+    <button class="filter-btn" onclick="filterBy('rent', this)">For Rent</button>
+    <button class="filter-btn" onclick="filterBy('sale', this)">For Sale</button>
+    <button class="filter-btn" onclick="filterBy('top', this)">⭐ Top Rated</button>
+  </div>
+
+  <!-- FEATURED PROPERTIES -->
+  <section class="featured">
+    <div class="section-header">
+      <h3>Featured Properties</h3>
+      <span id="results-count"></span>
+    </div>
+    <div class="properties" id="properties-grid"></div>
+    <div id="no-results">
+      <div style="font-size:48px">🏠</div>
+      <p>No properties found. Try adjusting your search.</p>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works">
+    <h3>How Host Me Ke Works</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h4>Search & Discover</h4>
+        <p>Browse hundreds of Hostays, rental homes, and properties for sale across Kenya.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h4>Connect with Hosts</h4>
+        <p>Message property owners directly, ask questions, and arrange viewings.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h4>Book or Buy</h4>
+        <p>Confirm your stay or purchase securely through our platform.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2>Welcome Back</h2>
+      <p class="modal-sub">Sign in or create your Host Me Ke account</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login', this)">Log In</button>
+        <button class="auth-tab" onclick="switchTab('signup', this)">Sign Up</button>
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <div class="auth-success" id="auth-success"></div>
+
+      <!-- LOGIN -->
+      <div class="auth-form active" id="form-login">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="Your password" />
+        </div>
+        <button class="btn-primary" id="btn-login" onclick="handleLogin()">Log In</button>
+        <div class="divider">or</div>
+        <button class="btn-google" onclick="handleGoogle()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="auth-form" id="form-signup">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="signup-name" placeholder="Your full name" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signup-email" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signup-password" placeholder="Min. 6 characters" />
+        </div>
+        <button class="btn-primary" id="btn-signup" onclick="handleSignup()">Create Account</button>
+        <div class="divider">or</div>
+        <button class="btn-google" onclick="handleGoogle()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BECOME A HOST MODAL -->
+  <div class="modal-overlay" id="host-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeHostModal()">✕</button>
+      <h2>List Your Property</h2>
+      <p class="modal-sub">Fill in the details below to add your listing</p>
+      <div class="auth-error"   id="host-error"></div>
+      <div class="auth-success" id="host-success"></div>
+      <div class="form-group">
+        <label>Property Name</label>
+        <input type="text" id="host-name" placeholder="e.g. Diani Beach Villa" />
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" id="host-location" placeholder="e.g. Diani Beach, Mombasa" />
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select id="host-type">
+          <option value="bnb">Hostay (B&B / Short Stay)</option>
+          <option value="rent">For Rent</option>
+          <option value="sale">For Sale</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (KES)</label>
+        <input type="number" id="host-price" placeholder="e.g. 9500" />
+      </div>
+      <div class="form-group">
+        <label>Price Unit</label>
+        <select id="host-unit">
+          <option value="/night">/night</option>
+          <option value="/month">/month</option>
+          <option value=" KES"> KES (total, for sale)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Bedrooms</label>
+        <input type="number" id="host-beds" placeholder="e.g. 3" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Image URL</label>
+        <input type="url" id="host-img" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="host-desc" placeholder="Tell guests about your property…"></textarea>
+      </div>
+      <button class="btn-primary" id="btn-host-submit" onclick="submitListing()">Submit Listing</button>
+    </div>
+  </div>
+
+  <!-- MY BOOKINGS MODAL -->
+  <div id="bookings-modal">
+    <div class="bookings-card">
+      <div class="bookings-header">
+        <h3>My Bookings</h3>
+        <button onclick="closeBookingsModal()">✕</button>
+      </div>
+      <div class="bookings-list" id="bookings-list">
+        <div class="no-bookings">Loading bookings…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- M-PESA MODAL -->
+  <div id="mpesa-modal">
+    <div class="mpesa-card">
+      <button class="mpesa-close" onclick="closeMpesaModal()" title="Close">✕</button>
+      <div class="mpesa-card-header">
+        <div class="mpesa-icon">
+          <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 23L9 8L14 18L19 8L25 23" stroke="#00a651" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="mpesa-card-header-text">
+          <h3>Pay with M-Pesa</h3>
+          <p>You'll receive a prompt on your phone</p>
+        </div>
+      </div>
+      <div class="mpesa-property-strip">
+        <div>
+          <div class="prop-name" id="mp-prop-name">—</div>
+          <div class="prop-loc"  id="mp-prop-loc">—</div>
+        </div>
+        <div class="prop-amount">
+          <strong id="mp-prop-price">KES 0</strong>
+          <span   id="mp-prop-unit"></span>
+        </div>
+      </div>
+      <div class="mpesa-paybill-strip">
+        <div class="mpesa-paybill-row">
+          <span class="mpesa-pb-label">Paybill Number</span>
+          <span class="mpesa-pb-value" id="mp-paybill">42628305</span>
+        </div>
+        <div class="mpesa-paybill-row">
+          <span class="mpesa-pb-label">Account Number</span>
+          <span class="mpesa-pb-value accent" id="mp-account">—</span>
+        </div>
+      </div>
+      <div class="mpesa-body">
+        <div class="mpesa-field">
+          <label>M-Pesa Phone Number</label>
+          <div class="mpesa-phone-wrap">
+            <span class="mpesa-prefix">🇰🇪 +254</span>
+            <input type="tel" id="mp-phone" placeholder="7XX XXX XXX" maxlength="9" inputmode="numeric" />
+          </div>
+        </div>
+        <button class="mpesa-pay-btn" id="mp-pay-btn" onclick="mpesaPay()">
+          <span class="mpesa-spinner" id="mp-spinner"></span>
+          <span id="mp-btn-label">Send Payment Request</span>
+        </button>
+        <div class="mpesa-status" id="mp-status"></div>
+        <div class="mpesa-trust">
+          Secured by <a href="https://www.safaricom.co.ke/personal/m-pesa" target="_blank">Safaricom M-Pesa</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2026 <span>Host Me Ke</span>. All rights reserved. | Proudly Kenyan 🇰🇪</p>
+  </footer>
+
+  <!-- CHAT -->
+  <button id="chat-toggle" title="Chat with us">💬</button>
+  <div id="chat-window">
+    <iframe src="chatbot.html" width="100%" height="100%" style="border:none;"></iframe>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // ══════════════════════════════════════════════
+    // SUPABASE SETUP
+    // ══════════════════════════════════════════════
+    const SUPABASE_URL = 'https://vbcihvuckuzxfyaswphr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_DnnpoQIOZTt_Z65h8pnM2Q_pQxqqAR4';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Express server URL — change this when you deploy
+    const MPESA_API = 'http://localhost:3000';
+
+    let currentUser   = null;
+    let allProperties = [];   // loaded from Supabase
+    let likedSet      = new Set();
+    let mpesaProperty = null;
+
+    // ══════════════════════════════════════════════
+    // BOOT — load properties + listen for auth
+    // ══════════════════════════════════════════════
+    (async () => {
+      renderSkeletons();
+      await loadProperties();
+      db.auth.onAuthStateChange(async (event, session) => {
+        currentUser = session?.user ?? null;
+        updateHeaderUI();
+        if (currentUser) await loadWishlist();
+      });
+    })();
+
+    // ══════════════════════════════════════════════
+    // LOAD PROPERTIES FROM SUPABASE
+    // ══════════════════════════════════════════════
+    async function loadProperties() {
+      const { data, error } = await db
+        .from('properties')
+        .select('*')
+        .eq('is_available', true)
+        .order('created_at', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        // Fall back to demo data if DB is empty or not yet set up
+        allProperties = DEMO_PROPERTIES;
+      } else {
+        allProperties = data;
+      }
+      renderProperties(allProperties);
+    }
+
+    // Demo data — shown while DB is empty / being set up
+    const DEMO_PROPERTIES = [
+      { id: 1, account_number: "HM0012026", name: "Villa Sol y Luna",   location: "Diani Beach, Mombasa",    type: "bnb",  price: 9400,     unit: "/night",  rating: 8.5, image_url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&q=80", beds: 3 },
+      { id: 2, account_number: "HM0022026", name: "Castaway Villa",     location: "Watamu, Kilifi",           type: "bnb",  price: 9548,     unit: "/night",  rating: 8.9, image_url: "https://images.unsplash.com/photo-1464983953574-0892a716854b?w=400&q=80", beds: 4 },
+      { id: 3, account_number: "HM0032026", name: "Falcon Nest",        location: "Karen, Nairobi",           type: "rent", price: 8570,     unit: "/month",  rating: 7.4, image_url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80", beds: 2 },
+      { id: 4, account_number: "HM0042026", name: "Orlando Resort",     location: "Kisumu, Nyanza",           type: "bnb",  price: 8700,     unit: "/night",  rating: 7.9, image_url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&q=80", beds: 5 },
+      { id: 5, account_number: "HM0052026", name: "Savanna Heights",    location: "Ngong Road, Nairobi",      type: "sale", price: 12500000, unit: " KES",    rating: 9.1, image_url: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&q=80", beds: 4 },
+      { id: 6, account_number: "HM0062026", name: "Coral Bay Cottage",  location: "Malindi, Kilifi",          type: "rent", price: 35000,    unit: "/month",  rating: 8.2, image_url: "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=400&q=80", beds: 2 },
+      { id: 7, account_number: "HM0072026", name: "Lakeside Manor",     location: "Naivasha, Rift Valley",    type: "sale", price: 8900000,  unit: " KES",    rating: 8.7, image_url: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&q=80", beds: 5 },
+      { id: 8, account_number: "HM0082026", name: "Uhuru Apartments",   location: "Westlands, Nairobi",       type: "rent", price: 55000,    unit: "/month",  rating: 7.8, image_url: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80", beds: 1 }
+    ];
+
+    // ══════════════════════════════════════════════
+    // LOAD WISHLIST FROM SUPABASE
+    // ══════════════════════════════════════════════
+    async function loadWishlist() {
+      if (!currentUser) return;
+      const { data } = await db
+        .from('wishlist')
+        .select('property_id')
+        .eq('user_id', currentUser.id);
+      likedSet = new Set((data || []).map(r => r.property_id));
+      renderProperties(allProperties); // re-render with correct heart states
+    }
+
+    // ══════════════════════════════════════════════
+    // RENDER PROPERTIES
+    // ══════════════════════════════════════════════
+    function renderSkeletons(count = 8) {
+      const grid = document.getElementById('properties-grid');
+      grid.innerHTML = Array.from({ length: count }, () => `
+        <div class="skeleton-card">
+          <div class="skeleton skeleton-img"></div>
+          <div class="skeleton-body">
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+            <div class="skeleton skeleton-btn"></div>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderProperties(list) {
+      const grid      = document.getElementById('properties-grid');
+      const noResults = document.getElementById('no-results');
+      const countEl   = document.getElementById('results-count');
+      grid.innerHTML  = '';
+
+      if (list.length === 0) {
+        noResults.style.display = 'block';
+        countEl.textContent = '0 properties found';
+        return;
+      }
+      noResults.style.display = 'none';
+      countEl.textContent = list.length + ' propert' + (list.length === 1 ? 'y' : 'ies') + ' found';
+
+      list.forEach(p => {
+        const badgeClass  = p.type === 'sale' ? 'sale' : p.type === 'bnb' ? 'bnb' : '';
+        const badgeLabel  = p.type === 'sale' ? 'For Sale' : p.type === 'bnb' ? 'Hostay' : 'For Rent';
+        const isLiked     = likedSet.has(p.id);
+        const fmtPrice    = Number(p.price).toLocaleString('en-KE');
+        const payLabel    = p.type === 'sale' ? '💳 Pay Deposit' : p.type === 'rent' ? '💳 Pay Deposit' : '💳 Book & Pay';
+
+        const card = document.createElement('div');
+        card.className  = 'property';
+        card.dataset.id = p.id;
+        card.innerHTML = `
+          <div class="property-img-wrap">
+            <img src="${p.image_url || ''}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'"/>
+            <span class="property-badge ${badgeClass}">${badgeLabel}</span>
+            <button class="wishlist-btn ${isLiked ? 'liked' : ''}"
+                    onclick="toggleLike(event, ${p.id})" title="Save to wishlist">
+              ${isLiked ? '❤️' : '🤍'}
+            </button>
+          </div>
+          <div class="property-info">
+            <strong>${p.name}</strong>
+            <div class="property-location">📍 ${p.location} · ${p.beds} bed${p.beds > 1 ? 's' : ''}</div>
+            <div class="property-meta">
+              <div class="property-price">KES ${fmtPrice}<span>${p.unit}</span></div>
+              <div class="property-rating">⭐ ${p.rating}</div>
+            </div>
+            <button class="btn-pay-card" onclick="openMpesaModal(event, ${p.id})">${payLabel}</button>
+          </div>`;
+
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.wishlist-btn') || e.target.closest('.btn-pay-card')) return;
+          showToast(`Viewing: ${p.name}`);
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    // SEARCH & FILTER
+    // ══════════════════════════════════════════════
+    function runSearch() {
+      const loc   = document.getElementById('search-location').value.trim().toLowerCase();
+      const type  = document.getElementById('search-type').value;
+      const price = parseFloat(document.getElementById('search-price').value) || Infinity;
+      const results = allProperties.filter(p => {
+        const matchLoc   = !loc  || p.location.toLowerCase().includes(loc) || p.name.toLowerCase().includes(loc);
+        const matchType  = !type || p.type === type;
+        const matchPrice = p.price <= price;
+        return matchLoc && matchType && matchPrice;
+      });
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.filter-btn').classList.add('active');
+      renderProperties(results);
+      showToast(results.length + ' result' + (results.length !== 1 ? 's' : '') + ' found');
+    }
+
+    function filterBy(type, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('search-location').value = '';
+      document.getElementById('search-type').value     = '';
+      document.getElementById('search-price').value    = '';
+      let results;
+      if (type === 'all')  results = allProperties;
+      else if (type === 'top') results = [...allProperties].filter(p => p.rating >= 8.5).sort((a, b) => b.rating - a.rating);
+      else results = allProperties.filter(p => p.type === type);
+      renderProperties(results);
+    }
+
+    // ══════════════════════════════════════════════
+    // WISHLIST — synced to Supabase
+    // ══════════════════════════════════════════════
+    async function toggleLike(event, id) {
+      event.stopPropagation();
+      if (!currentUser) { openModal('login'); showToast('Please log in to save to wishlist'); return; }
+
+      const btn = event.currentTarget;
+      if (likedSet.has(id)) {
+        likedSet.delete(id);
+        btn.textContent = '🤍';
+        btn.classList.remove('liked');
+        await db.from('wishlist').delete().match({ user_id: currentUser.id, property_id: id });
+        showToast('Removed from wishlist');
+      } else {
+        likedSet.add(id);
+        btn.textContent = '❤️';
+        btn.classList.add('liked');
+        await db.from('wishlist').insert({ user_id: currentUser.id, property_id: id });
+        showToast('Saved to wishlist ❤️');
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    // BECOME A HOST — save listing to Supabase
+    // ══════════════════════════════════════════════
+    function openHostModal() {
+      if (!currentUser) { openModal('login'); showToast('Please log in to list a property'); return; }
+      document.getElementById('host-modal').classList.add('open');
+    }
+    function closeHostModal() {
+      document.getElementById('host-modal').classList.remove('open');
+    }
+    document.getElementById('host-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('host-modal')) closeHostModal();
+    });
+
+    async function submitListing() {
+      if (!currentUser) return;
+      const name     = document.getElementById('host-name').value.trim();
+      const location = document.getElementById('host-location').value.trim();
+      const type     = document.getElementById('host-type').value;
+      const price    = parseFloat(document.getElementById('host-price').value);
+      const unit     = document.getElementById('host-unit').value;
+      const beds     = parseInt(document.getElementById('host-beds').value) || 1;
+      const image_url= document.getElementById('host-img').value.trim();
+      const description = document.getElementById('host-desc').value.trim();
+
+      const errEl = document.getElementById('host-error');
+      const sucEl = document.getElementById('host-success');
+      errEl.style.display = 'none';
+      sucEl.style.display = 'none';
+
+      if (!name || !location || !price) {
+        errEl.textContent = 'Please fill in Name, Location and Price.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('btn-host-submit');
+      btn.disabled = true; btn.textContent = 'Submitting…';
+
+      // Generate account number
+      const account_number = 'HM' + Date.now().toString().slice(-6) + new Date().getFullYear();
+
+      const { error } = await db.from('properties').insert({
+        name, location, type, price, unit, beds, image_url, description,
+        account_number, host_id: currentUser.id, is_available: true, rating: 0
+      });
+
+      btn.disabled = false; btn.textContent = 'Submit Listing';
+
+      if (error) {
+        errEl.textContent = error.message;
+        errEl.style.display = 'block';
+      } else {
+        sucEl.textContent = '🎉 Your property has been listed! It will appear after review.';
+        sucEl.style.display = 'block';
+        await loadProperties(); // refresh grid
+        setTimeout(closeHostModal, 2500);
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    // MY BOOKINGS
+    // ══════════════════════════════════════════════
+    async function openBookingsModal() {
+      closeUserDropdown();
+      document.getElementById('bookings-modal').classList.add('open');
+      const list = document.getElementById('bookings-list');
+      list.innerHTML = '<div class="no-bookings">Loading…</div>';
+
+      const { data, error } = await db
+        .from('bookings')
+        .select('*, properties(name, location)')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        list.innerHTML = '<div class="no-bookings">🏠 No bookings yet.</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(b => `
+        <div class="booking-item">
+          <div>
+            <div class="b-name">${b.properties?.name || 'Property'}</div>
+            <div class="b-ref">Ref: ${b.account_reference}</div>
+            <div class="b-date">${new Date(b.created_at).toLocaleDateString('en-KE', { dateStyle: 'medium' })}</div>
+            <span class="booking-status ${b.status}">${b.status}</span>
+          </div>
+          <div class="b-amount">KES ${Number(b.amount).toLocaleString('en-KE')}</div>
+        </div>`).join('');
+    }
+
+    function closeBookingsModal() {
+      document.getElementById('bookings-modal').classList.remove('open');
+    }
+    document.getElementById('bookings-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('bookings-modal')) closeBookingsModal();
+    });
+
+    // ══════════════════════════════════════════════
+    // M-PESA MODAL
+    // ══════════════════════════════════════════════
+    function openMpesaModal(event, propertyId) {
+      event.stopPropagation();
+      if (!currentUser) { openModal('login'); showToast('Please log in to make a payment'); return; }
+      populateMpesaModal(propertyId);
+    }
+
+    function populateMpesaModal(propertyId) {
+      mpesaProperty = allProperties.find(p => p.id === propertyId);
+      if (!mpesaProperty) return;
+      document.getElementById('mp-prop-name').textContent  = mpesaProperty.name;
+      document.getElementById('mp-prop-loc').textContent   = '📍 ' + mpesaProperty.location;
+      document.getElementById('mp-prop-price').textContent = 'KES ' + Number(mpesaProperty.price).toLocaleString('en-KE');
+      document.getElementById('mp-prop-unit').textContent  = mpesaProperty.unit;
+      document.getElementById('mp-paybill').textContent = '174379';
+      document.getElementById('mp-account').textContent   = mpesaProperty.account_number;
+      document.getElementById('mp-phone').value            = '';
+      resetMpesaUI();
+      document.getElementById('mpesa-modal').classList.add('open');
+    }
+
+    function openMpesaFromMenu() {
+      closeUserDropdown();
+      const overlay = document.createElement('div');
+      overlay.id = 'prop-picker-overlay';
+      overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:650;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px;`;
+      const box = document.createElement('div');
+      box.style.cssText = `background:#fff;border-radius:20px;width:100%;max-width:420px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,0.3);animation:slideUp 0.3s ease;`;
+      const hdr = document.createElement('div');
+      hdr.style.cssText = `background:linear-gradient(135deg,#1a3c5e,#2d6a9f);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;`;
+      hdr.innerHTML = `<div><div style="font-family:'Playfair Display',serif;font-size:17px;color:#fff;font-weight:700;">Select Property to Pay</div><div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px;">Choose the property you are paying for</div></div><button onclick="document.getElementById('prop-picker-overlay').remove()" style="background:rgba(255,255,255,0.2);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>`;
+      const list = document.createElement('div');
+      list.style.cssText = 'overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;';
+      allProperties.forEach(p => {
+        const row = document.createElement('button');
+        row.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f7f4ef;border:1.5px solid #e2ddd6;border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;text-align:left;width:100%;`;
+        row.onmouseenter = () => { row.style.background='#e8f5e9'; row.style.borderColor='#00a651'; };
+        row.onmouseleave = () => { row.style.background='#f7f4ef'; row.style.borderColor='#e2ddd6'; };
+        const typeLabel = p.type === 'bnb' ? 'Hostay' : p.type === 'rent' ? 'Rental' : 'For Sale';
+        const typeBg    = p.type === 'bnb' ? '#38a838' : p.type === 'rent' ? '#1a3c5e' : '#e85a38';
+        row.innerHTML = `<div><div style="font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:3px;">${p.name}</div><div style="font-size:12px;color:#6b7280;">📍 ${p.location}</div><div style="font-size:11px;color:#00a651;font-weight:600;margin-top:3px;font-family:monospace;">Acc: ${p.account_number}</div></div><div style="text-align:right;flex-shrink:0;margin-left:12px;"><div style="font-size:13px;font-weight:700;color:#1a3c5e;">KES ${Number(p.price).toLocaleString('en-KE')}</div><div style="font-size:10px;color:#6b7280;">${p.unit}</div><div style="margin-top:4px;display:inline-block;background:${typeBg};color:#fff;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;">${typeLabel}</div></div>`;
+        row.addEventListener('click', () => { document.getElementById('prop-picker-overlay').remove(); populateMpesaModal(p.id); });
+        list.appendChild(row);
+      });
+      box.appendChild(hdr); box.appendChild(list); overlay.appendChild(box); document.body.appendChild(overlay);
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    }
+
+    function closeMpesaModal() {
+      document.getElementById('mpesa-modal').classList.remove('open');
+      mpesaProperty = null; resetMpesaUI();
+    }
+    document.getElementById('mpesa-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeMpesaModal();
+    });
+
+    function resetMpesaUI() {
+      const btn     = document.getElementById('mp-pay-btn');
+      const spinner = document.getElementById('mp-spinner');
+      const label   = document.getElementById('mp-btn-label');
+      const status  = document.getElementById('mp-status');
+      btn.disabled = false; spinner.style.display = 'none';
+      label.textContent = 'Send Payment Request';
+      status.className = 'mpesa-status'; status.textContent = '';
+    }
+
+    function setMpesaLoading(loading) {
+      const btn     = document.getElementById('mp-pay-btn');
+      const spinner = document.getElementById('mp-spinner');
+      const label   = document.getElementById('mp-btn-label');
+      btn.disabled = loading;
+      spinner.style.display = loading ? 'block' : 'none';
+      label.textContent = loading ? 'Waiting for payment…' : 'Send Payment Request';
+    }
+
+    function setMpesaStatus(type, msg) {
+      const el = document.getElementById('mp-status');
+      el.className = 'mpesa-status ' + type; el.textContent = msg;
+    }
+
+    async function mpesaPay() {
+      if (!mpesaProperty) return;
+      const rawPhone = document.getElementById('mp-phone').value.trim().replace(/\s/g, '');
+      if (!rawPhone || rawPhone.length < 9) {
+        setMpesaStatus('error', 'Please enter a valid 9-digit M-Pesa number (e.g. 712345678).');
+        return;
+      }
+      const phone = '254' + rawPhone.replace(/^0/, '');
+      const ref   = mpesaProperty.account_number;
+
+      setMpesaLoading(true);
+      setMpesaStatus('waiting', '⏳ Sending payment request to your phone…');
+
+      // Save a pending booking first
+      let bookingId = null;
+      if (currentUser) {
+        const { data: bk } = await db.from('bookings').insert({
+          property_id: mpesaProperty.id, user_id: currentUser.id,
+          phone, amount: mpesaProperty.price, account_reference: ref, status: 'pending'
+        }).select().single();
+        bookingId = bk?.id;
+      }
+
+      try {
+        const res  = await fetch(`${MPESA_API}/api/mpesa/stk-push`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, amount: mpesaProperty.price, accountReference: ref, description: mpesaProperty.name }),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error?.errorMessage || 'Failed to send request.');
+
+        const checkoutRequestID = data.data.CheckoutRequestID;
+
+        // Update booking with checkout ID
+        if (bookingId) {
+          await db.from('bookings').update({ checkout_request_id: checkoutRequestID }).eq('id', bookingId);
+        }
+
+        setMpesaStatus('waiting', '📱 Check your phone and enter your M-Pesa PIN to complete payment.');
+        await pollMpesaStatus(checkoutRequestID, bookingId);
+
+      } catch (err) {
+        setMpesaStatus('error', '❌ ' + err.message);
+        setMpesaLoading(false);
+        if (bookingId) await db.from('bookings').update({ status: 'failed' }).eq('id', bookingId);
+      }
+    }
+
+    async function pollMpesaStatus(checkoutRequestID, bookingId) {
+      const TIMEOUT = 60_000, INTERVAL = 5_000, start = Date.now();
+      return new Promise(resolve => {
+        const timer = setInterval(async () => {
+          try {
+            const res  = await fetch(`${MPESA_API}/api/mpesa/stk-query`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ checkoutRequestID }),
+            });
+            const data = await res.json();
+            const code = data.data?.ResultCode;
+
+            if (code === '0' || code === 0) {
+              clearInterval(timer);
+              setMpesaLoading(false);
+              setMpesaStatus('success', '✅ Payment received! Your booking is confirmed.');
+              showToast('Payment successful! 🎉');
+              // Update booking status to confirmed in Supabase
+              if (bookingId) {
+                await db.from('bookings').update({
+                  status: 'confirmed',
+                  mpesa_receipt: data.data?.MpesaReceiptNumber || null
+                }).eq('id', bookingId);
+              }
+              setTimeout(closeMpesaModal, 3500);
+              resolve();
+            } else if (code !== undefined && code !== '1032') {
+              clearInterval(timer);
+              setMpesaLoading(false);
+              setMpesaStatus('error', '❌ Payment not completed. Please try again.');
+              if (bookingId) await db.from('bookings').update({ status: 'failed' }).eq('id', bookingId);
+              resolve();
+            }
+
+            if (Date.now() - start > TIMEOUT) {
+              clearInterval(timer);
+              setMpesaLoading(false);
+              setMpesaStatus('error', '⏰ Request timed out. If you paid, please contact support.');
+              resolve();
+            }
+          } catch (_) {}
+        }, INTERVAL);
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════
+    function openModal(tab = 'login') {
+      document.getElementById('auth-modal').classList.add('open');
+      switchTab(tab, document.querySelector(`.auth-tab:${tab === 'login' ? 'first-child' : 'last-child'}`));
+      clearAuthMessages();
+    }
+    function closeModal() {
+      document.getElementById('auth-modal').classList.remove('open');
+      clearAuthMessages();
+    }
+    document.getElementById('auth-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('auth-modal')) closeModal();
+    });
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.getElementById('form-' + tab).classList.add('active');
+      clearAuthMessages();
+      document.querySelector('.modal h2').textContent = tab === 'login' ? 'Welcome Back' : 'Create Account';
+    }
+    function showAuthError(msg)   { const e = document.getElementById('auth-error');   e.textContent = msg; e.style.display = 'block'; document.getElementById('auth-success').style.display = 'none'; }
+    function showAuthSuccess(msg) { const e = document.getElementById('auth-success'); e.textContent = msg; e.style.display = 'block'; document.getElementById('auth-error').style.display   = 'none'; }
+    function clearAuthMessages()  { document.getElementById('auth-error').style.display = 'none'; document.getElementById('auth-success').style.display = 'none'; }
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.textContent = loading ? 'Please wait...' : (btnId === 'btn-login' ? 'Log In' : 'Create Account');
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) return showAuthError('Please fill in all fields.');
+      setLoading('btn-login', true); clearAuthMessages();
+      const { error } = await db.auth.signInWithPassword({ email, password });
+      setLoading('btn-login', false);
+      if (error) showAuthError(error.message);
+      else { closeModal(); showToast('Welcome back! 👋'); }
+    }
+
+    async function handleSignup() {
+      const name     = document.getElementById('signup-name').value.trim();
+      const email    = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      if (!name || !email || !password) return showAuthError('Please fill in all fields.');
+      if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
+      setLoading('btn-signup', true); clearAuthMessages();
+      const { error } = await db.auth.signUp({ email, password, options: { data: { full_name: name } } });
+      setLoading('btn-signup', false);
+      if (error) showAuthError(error.message);
+      else showAuthSuccess('Account created! Please check your email to confirm.');
+    }
+
+    async function handleGoogle() {
+      const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+      if (error) showAuthError(error.message);
+    }
+
+    async function handleLogout() {
+      await db.auth.signOut();
+      currentUser = null; likedSet.clear();
+      updateHeaderUI(); showToast('You have been logged out.'); closeUserDropdown();
+    }
+
+    function updateHeaderUI() {
+      const headerLinks = document.getElementById('header-links');
+      if (currentUser) {
+        const name    = currentUser.user_metadata?.full_name || currentUser.email;
+        const initial = name.charAt(0).toUpperCase();
+        headerLinks.innerHTML = `
+          <a href="#" class="btn-host" onclick="openHostModal(); return false;">Become a Host</a>
+          <div class="user-menu">
+            <button class="user-avatar" onclick="toggleUserDropdown()" title="${name}">${initial}</button>
+            <div class="user-dropdown" id="user-dropdown">
+              <p>Signed in as<br><strong>${currentUser.email}</strong></p>
+              <a href="#" onclick="openBookingsModal(); return false;">My Bookings</a>
+              <a href="#" class="pay-link" onclick="openMpesaFromMenu(); return false;">💳 Make Payment</a>
+              <a href="#" class="logout" onclick="handleLogout()">Log Out</a>
+            </div>
+          </div>`;
+      } else {
+        headerLinks.innerHTML = `
+          <a href="#" class="btn-host" onclick="openHostModal(); return false;">Become a Host</a>
+          <a href="#" id="login-link" onclick="openModal('login'); return false;">Log in</a>`;
+      }
+    }
+
+    function toggleUserDropdown() { document.getElementById('user-dropdown')?.classList.toggle('open'); }
+    function closeUserDropdown()  { document.getElementById('user-dropdown')?.classList.remove('open'); }
+    document.addEventListener('click', e => { if (!e.target.closest('.user-menu')) closeUserDropdown(); });
+
+    // ══════════════════════════════════════════════
+    // CHAT & UTILITIES
+    // ══════════════════════════════════════════════
+    const chatToggle = document.getElementById('chat-toggle');
+    const chatWindow = document.getElementById('chat-window');
+    chatToggle.addEventListener('click', () => {
+      const isOpen = chatWindow.style.display === 'block';
+      chatWindow.style.display = isOpen ? 'none' : 'block';
+      chatToggle.textContent   = isOpen ? '💬' : '✕';
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg; toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    ['search-location', 'search-price'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+    });
+  </script>
+</body>
+</html>
